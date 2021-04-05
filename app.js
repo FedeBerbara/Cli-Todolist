@@ -3,14 +3,22 @@ const {
     inquirerMenu, 
     pause, 
     readInput, 
+    deleteListMenu,
+    confirmation,
+    checklistMenu
 } = require('./helpers/inquirer');
-const { saveInfo } = require('./helpers/saveFiles');
+const { saveInfo, readDB } = require('./helpers/saveFiles');
 const Tasks = require('./models/tasks');
 
 const main = async () => {
 
     let opt = '';
     const tasks = new Tasks();
+    const taskDB = readDB();
+
+    if (taskDB) { 
+        tasks.loadTaskFromArray(taskDB);
+    }
 
     do {
         // This function print the menu in the console
@@ -25,9 +33,39 @@ const main = async () => {
 
             case '2':
                 // List all Tasks
-                console.log(tasks.arrayList);
+                tasks.listCompleted()
             break;
 
+            case '3': 
+                // List completed 
+                tasks.listPendingComplete(true);
+            break;
+
+            case '4': 
+                // List pending
+                tasks.listPendingComplete(false);
+            break;
+            
+            case '5': 
+                // Completed || Pending
+                const ids = await checklistMenu(tasks.arrayList);
+                tasks.toggleCompleted(ids)
+            break;
+
+            case '6': 
+                // Delete
+                const id =  await deleteListMenu(tasks.arrayList);
+
+                if ( id !== '0' ) {
+                    const confirm = await confirmation('¿Are you shure?');
+    
+                    if (confirm) {
+                        tasks.deleteTask(id); 
+                        console.log()
+                        console.log('Task successfully deleted');
+                    }
+                }
+            break;
         }
 
         saveInfo(tasks.arrayList);
